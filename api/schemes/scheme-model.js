@@ -1,4 +1,5 @@
 const db = require('../../data/db-config')
+
 function find() { // EXERCISE A
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
@@ -19,7 +20,7 @@ function find() { // EXERCISE A
  return db('schemes as sc')
  .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
  .select('sc.*')
- .count('st.step_idas number_of_steps')
+ .count('st.step_id as number_of_steps')
  .groupBy('sc.scheme_id')
 }
 
@@ -130,8 +131,9 @@ async function findById(scheme_id) { // EXERCISE B
       rows.forEach(row => {
         if (row.step_id) {
           result.steps.push({
-            scheme_id: row.step_id,
-            scheme_name: row.step_number,
+            step_id: row.step_id,
+            step_number: row.step_number,
+            instructions: row.instructions,
           })
         }
       })
@@ -160,7 +162,7 @@ async function findSteps(scheme_id) { // EXERCISE C
         }
       ]
   */
- const rows=  db('schemes as sc')
+ const rows = await db('schemes as sc')
  .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
  .select('st.step_id', 'st.step_number', 'instructions', 'sc.scheme_name')
  .where('sc.scheme_id', scheme_id)
@@ -186,6 +188,17 @@ function addStep(scheme_id, step) { // EXERCISE E
     and resolves to _all the steps_ belonging to the given `scheme_id`,
     including the newly created one.
   */
+ return db('steps').insert({
+  ...step,
+  scheme_id
+ })
+ .then(() => {
+  return db('steps as st')
+  .join('schemes as sc', 'sc.scheme_id', 'st.scheme_id')
+  .select('step_id', 'step_number', 'instructions', 'scheme_name')
+  .orderBy('step_number')
+  .where('st.scheme_id', scheme_id)
+ })
 }
 
 module.exports = {
